@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eksperimen Kimia Ulang Tahun - 2026</title>
+    <style>
+        body, html { margin: 0; padding: 0; background: #001f3f; color: white; font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; text-align: center; }
+        #bgCanvas { position: fixed; top: 0; left: 0; z-index: 1; pointer-events: none; }
+        #fwCanvas { position: fixed; top: 0; left: 0; z-index: 2; pointer-events: none; }
+        .container { position: relative; z-index: 10; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+        .hidden { display: none !important; }
+        .btn { background: #00d4ff; border: none; padding: 15px 30px; border-radius: 25px; cursor: pointer; font-weight: bold; color: black; margin-top: 20px; font-size: 16px; box-shadow: 0 0 15px rgba(0,212,255,0.5); }
+        .option-btn { display: block; width: 280px; margin: 10px auto; padding: 12px; background: white; color: black; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; }
+        .box-container { display: flex; gap: 10px; margin-bottom: 20px; }
+        .box { width: 60px; height: 60px; border: 2px dashed white; display: flex; align-items: center; justify-content: center; font-size: 30px; background: rgba(255,255,255,0.1); transition: 0.5s; }
+        .floating { transform: scale(1.2); border: 2px solid #00d4ff; animation: pulse 1s infinite alternate; }
+        @keyframes pulse { from { box-shadow: 0 0 5px #00d4ff; } to { box-shadow: 0 0 20px #00d4ff; } }
+        #noteArea { width: 90%; max-width: 500px; height: 150px; padding: 10px; border-radius: 10px; border: 3px solid #00d4ff; margin-top: 10px; font-size: 16px; }
+        .typing { white-space: pre-wrap; font-size: 18px; line-height: 1.5; max-width: 600px; font-weight: bold; }
+        .watermark { position: fixed; bottom: 15px; right: 20px; font-size: 14px; color: rgba(0, 212, 255, 0.6); z-index: 100; font-style: italic; }
+        .payment-box { background: rgba(0, 212, 255, 0.1); padding: 20px; border-radius: 15px; border: 1px solid #00d4ff; margin-top: 20px; z-index: 1000; }
+    </style>
+</head>
+<body>
+    <canvas id="bgCanvas"></canvas>
+    <canvas id="fwCanvas"></canvas>
+    
+    <!-- Link musik cadangan yang lebih stabil -->
+    <audio id="lagu" src="https://www.mboxdrive.com" preload="auto"></audio>
+
+    <div class="watermark">by laras cantiqq><</div>
+
+    <!-- Halaman 1 -->
+    <div id="s1" class="container">
+        <h1>Selamat Datang</h1>
+        <p style="color: #ff4d4d; font-weight: bold;">*wajib videokan diri anda saat membuka situs ini</p>
+        <button class="btn" onclick="pindah(2)">Eksperimen dimulai</button>
+    </div>
+
+    <!-- Halaman 2: Game -->
+    <div id="s2" class="container hidden">
+        <div class="box-container"><div id="b1" class="box">?</div><div id="b2" class="box">?</div><div id="b3" class="box">?</div></div>
+        <h2 id="teksSoal">Memuat Soal...</h2>
+        <div id="pilihan"></div>
+    </div>
+
+    <!-- Halaman 3 -->
+    <div id="s3" class="container hidden">
+        <div id="wishTxt" class="typing"></div>
+        <button id="btnKepo" class="btn hidden" onclick="pindah(4)">kepoin selanjutnya</button>
+    </div>
+
+    <!-- Halaman 4 -->
+    <div id="s4" class="container hidden">
+        <div id="doaTxt" class="typing"></div>
+        <button id="btnCatat" class="btn hidden" onclick="pindah(5)">terima catatan</button>
+    </div>
+
+    <!-- Halaman 5 -->
+    <div id="s5" class="container hidden">
+        <div id="mainNote">
+            <h2>Dear My Self</h2>
+            <p>ditulis olehmu untuk dirimu sendiri</p>
+            <textarea id="noteArea" placeholder="Tulis doamu di sini..."></textarea><br>
+            <button class="btn" onclick="simpanCatatan()">Simpan Catatan</button>
+        </div>
+        
+        <div id="fPart" class="hidden">
+            <p style="margin-top:20px;">hasilnya tidak sempurna, tapi nyata.<br>Terima kasih sudah meluangkan waktu.</p>
+            <button id="btnFinish" class="btn" onclick="tampilPayment()">Eksperimen selesai</button>
+        </div>
+        
+        <div id="payArea" class="hidden payment-box">
+            <p>Ada sesuatu di balik sini...<br>Pembayaran web tidak ditanggung negara, silahkan pilih payment berikut:</p>
+            <button class="option-btn" onclick="akhir()">a. Transfer Gopay</button>
+            <button class="option-btn" onclick="akhir()">b. Membelikan Boneka Penguin Lucu</button>
+            <button class="option-btn" onclick="akhir()">c. Membelikan 2 Novel Baru</button>
+        </div>
+    </div>
+
+    <script>
+        // --- ANIMASI BACKGROUND ---
+        const canvas = document.getElementById('bgCanvas'); const ctx = canvas.getContext('2d');
+        let parts = []; canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        class P { constructor() { this.x = Math.random()*canvas.width; this.y = Math.random()*canvas.height; this.s = Math.random()*2+1; this.vx = Math.random()*0.6-0.3; this.vy = Math.random()*0.6-0.3; }
+            draw() { ctx.fillStyle = '#00d4ff'; ctx.beginPath(); ctx.arc(this.x,this.y,this.s,0,Math.PI*2); ctx.fill(); }
+            update() { this.x+=this.vx; this.y+=this.vy; if(this.x<0||this.x>canvas.width) this.vx*=-1; if(this.y<0||this.y>canvas.height) this.vy*=-1; }
+        }
+        function initBg() { for(let i=0; i<60; i++) parts.push(new P()); function loop() { ctx.clearRect(0,0,canvas.width,canvas.height); parts.forEach(p => { p.update(); p.draw(); }); for(let a=0;a<parts.length;a++){ for(let b=a;b<parts.length;b++){ let d = Math.hypot(parts[a].x-parts[b].x, parts[a].y-parts[b].y); if(d<100){ ctx.strokeStyle='rgba(0,212,255,0.15)'; ctx.beginPath(); ctx.moveTo(parts[a].x,parts[a].y); ctx.lineTo(parts[b].x,parts[b].y); ctx.stroke(); } } } requestAnimationFrame(loop); } loop(); } initBg();
+
+        // --- KEMBANG API ---
+        const fwCanvas = document.getElementById('fwCanvas'); const fwCtx = fwCanvas.getContext('2d');
+        fwCanvas.width = window.innerWidth; fwCanvas.height = window.innerHeight;
+        let fireworks = [];
+        function createFirework() { const x = Math.random() * fwCanvas.width; const y = Math.random() * fwCanvas.height/2; const color = `hsl(${Math.random()*360}, 100%, 50%)`; for(let i=0; i<30; i++) { fireworks.push({ x, y, vx:Math.cos(i)*Math.random()*5, vy:Math.sin(i)*Math.random()*5, life:100, color }); } }
+        function drawFireworks() { fwCtx.clearRect(0,0,fwCanvas.width,fwCanvas.height); fireworks.forEach((f, i) => { f.x += f.vx; f.y += f.vy; f.vy += 0.05; f.life--; fwCtx.fillStyle = f.color; fwCtx.globalAlpha = f.life/100; fwCtx.beginPath(); fwCtx.arc(f.x, f.y, 2, 0, Math.PI*2); fwCtx.fill(); if(f.life <= 0) fireworks.splice(i, 1); }); requestAnimationFrame(drawFireworks); }
+
+        // --- LOGIKA UTAMA ---
+        const soal = [
+            {q: "1.) Unsur dengan nomor atom 1 dan nomor massa 1 adalah?", a: "H", opt: ["He", "H", "Li"], c: 1},
+            {q: "2.) Unsur dengan nomor atom 5 dan nomor massa 11 adalah?", a: "B", opt: ["C", "N", "B"], c: 2},
+            {q: "3.) Isotop nomor atom 1 dengan massa 2 dikenal sebagai?", a: "D", opt: ["D", "T", "H"], c: 0}
+        ];
+        let cur = 0, salahCount = 0;
+        const lagu = document.getElementById('lagu');
+
+        function pindah(n) {
+            document.querySelectorAll('.container').forEach(d => d.classList.add('hidden'));
+            document.getElementById('s' + n).classList.remove('hidden');
+            if (n === 2) loadS();
+            if (n === 3) { 
+                lagu.play().catch(() => {
+                    // Jika autoplay diblokir, buat pemicu darurat
+                    document.body.addEventListener('click', () => { lagu.play(); }, {once: true});
+                });
+                drawFireworks(); setInterval(createFirework, 500); 
+                ketik("wishTxt", " Happy Brojol Day \nihihihi makin tua deh\n\nSemoga hidupmu stabil, tidak reaktif berlebihan.\nSemoga rezekimu terus bereaksi positif.\nSemoga hatimu ga gampang teroksidasi.\nSemoga hidupmu tidak se-ribet laporan praktikum.", "btnKepo"); 
+            }
+            if (n === 4) ketik("doaTxt", "Untukmu, selamat ulang tahun.\nSemoga apa yang disemogakan tersemogakan.\n\nSelalu sayang sama keluarga ya.\nSelalu bangga ya sama diri sendiri,\nsekecil apapun pencapaian yang telah dicapai.\nMembanggakan orang tua, kakak, dan adik.\nJangan lupa diri sendiri juga.\nJaga ucapan dan sikap, apalagi seorang guru.\n\nKata mama: saudara harus saling menyayangi.", "btnCatat");
+            if (n === 5) { let s = localStorage.getItem('cUltah'); if(s) document.getElementById('noteArea').value = s; }
+        }
+
+        function loadS() {
+            let s = soal[cur]; document.getElementById('teksSoal').innerText = s.q;
+            let p = document.getElementById('pilihan'); p.innerHTML = "";
+            s.opt.forEach((t, i) => {
+                let b = document.createElement('button'); b.className = "option-btn"; b.innerText = t;
+                b.onclick = () => {
+                    if (i === s.c) {
+                        document.getElementById('b'+(cur+1)).innerText = s.a;
+                        document.getElementById('b'+(cur+1)).classList.add('floating');
+                        cur++; salahCount = 0;
+                        if (cur < 3) setTimeout(loadS, 800);
+                        else p.innerHTML = `<button class="btn" onclick="pindah(3)">menggabungkan unsur</button>`;
+                    } else {
+                        if (salahCount === 0) { alert("pede banget ini jawabannya"); salahCount++; }
+                        else { alert("gimana sih kok masih salah"); }
+                    }
+                }; p.appendChild(b);
+            });
+        }
+
+        function ketik(id, txt, idTombol) {
+            let i=0; let el=document.getElementById(id); el.innerText="";
+            function t() { if(i<txt.length){ el.innerText+=txt.charAt(i); i++; setTimeout(t, 40); } else { document.getElementById(idTombol).classList.remove('hidden'); } } t();
+        }
+
+        function simpanCatatan() {
+            localStorage.setItem('cUltah', document.getElementById('noteArea').value);
+            alert("Tersimpan secara permanen!"); 
+            document.getElementById('fPart').classList.remove('hidden');
+        }
+
+        function tampilPayment() {
+            if(confirm("Apakah anda yakin ingin mengakhiri eksperimen ini?")) {
+                document.getElementById('mainNote').classList.add('hidden');
+                document.getElementById('btnFinish').classList.add('hidden');
+                document.getElementById('payArea').classList.remove('hidden');
+            }
+        }
+
+        function akhir() {
+            alert("yey ditunggu saat liburan!");
+        }
+    </script>
+</body>
+</html>
